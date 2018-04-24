@@ -1,9 +1,7 @@
 package org.pybee.cassowary;
 
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
@@ -20,11 +18,11 @@ public class SimplexSolver extends Tableau
 
     // give error variables for a non required constraint,
     // maps to SlackVariable-s
-    private Hashtable<AbstractConstraint, Set<AbstractVariable>> _errorVars;
+    private Map<AbstractConstraint, Set<AbstractVariable>> _errorVars;
 
     // Return a lookup table giving the marker variable for each
     // constraint (used when deleting a constraint).
-    private Hashtable<AbstractConstraint, AbstractVariable> _markerVars;
+    private Map<AbstractConstraint, AbstractVariable> _markerVars;
 
     private ObjectiveVariable _objective;
 
@@ -33,7 +31,7 @@ public class SimplexSolver extends Tableau
     // edit constraint (the edit plus/minus vars, the index [for old-style
     // resolve(Vector...) interface], and the previous value.
     // (EditInfo replaces the parallel vectors from the Smalltalk impl.)
-    private Hashtable<Variable, EditInfo> _editVarMap; // map Variable to a EditInfo
+    private Map<Variable, EditInfo> _editVarMap; // map Variable to a EditInfo
 
     private long _slackCounter;
     private long _artificialCounter;
@@ -54,8 +52,8 @@ public class SimplexSolver extends Tableau
     {
         _stayMinusErrorVars = new Vector<SlackVariable>();
         _stayPlusErrorVars = new Vector<SlackVariable>();
-        _errorVars = new Hashtable<AbstractConstraint, Set<AbstractVariable>>();
-        _markerVars = new Hashtable<AbstractConstraint, AbstractVariable>();
+        _errorVars = Util.newMap();
+        _markerVars = Util.newMap();
 
         _resolve_pair = new Vector<Double>(2);
         _resolve_pair.addElement(new Double(0.0));
@@ -63,7 +61,7 @@ public class SimplexSolver extends Tableau
 
         _objective = new ObjectiveVariable("Z");
 
-        _editVarMap = new Hashtable<Variable, EditInfo>();
+        _editVarMap = Util.newMap();
 
         _slackCounter = 0;
         _artificialCounter = 0;
@@ -246,11 +244,11 @@ public class SimplexSolver extends Tableau
     {
         try
         {
-            // Need to use an enumeration here to avoid concurrent modifications
-            Enumeration<Variable> e = _editVarMap.keys();
-            while (e.hasMoreElements())
+            // Used to use an enumeration here to avoid concurrent modifications
+        	Set<Variable> s = Util.newSet();
+        	s.addAll(_editVarMap.keySet());
+            for(Variable v : s)
             {
-                Variable v = e.nextElement();
                 EditInfo cei = _editVarMap.get(v);
                 if (cei.getIndex() >= n)
                 {
@@ -647,7 +645,7 @@ public class SimplexSolver extends Tableau
         return bstr.toString();
     }
 
-    public Hashtable<AbstractConstraint, AbstractVariable> getConstraintMap()
+    public Map<AbstractConstraint, AbstractVariable> getConstraintMap()
     {
         return _markerVars;
     }
@@ -748,7 +746,7 @@ public class SimplexSolver extends Tableau
         boolean foundUnrestricted = false;
         boolean foundNewRestricted = false;
 
-        final Hashtable<AbstractVariable, Double> terms = expr.getTerms();
+        final Map<AbstractVariable, Double> terms = expr.getTerms();
 
         for (AbstractVariable v: terms.keySet())
         {
@@ -895,7 +893,7 @@ public class SimplexSolver extends Tableau
                 {
                     double ratio = Double.MAX_VALUE;
                     double r;
-                    Hashtable<AbstractVariable, Double> terms = expr.getTerms();
+                    Map<AbstractVariable, Double> terms = expr.getTerms();
                     for (AbstractVariable v: terms.keySet())
                     {
                         double c = terms.get(v).doubleValue();
@@ -933,7 +931,7 @@ public class SimplexSolver extends Tableau
         DummyVariable dummyVar = new DummyVariable();
         SlackVariable eminus = new SlackVariable();
         SlackVariable eplus = new SlackVariable();
-        final Hashtable<AbstractVariable, Double> cnTerms = cnExpr.getTerms();
+        final Map<AbstractVariable, Double> cnTerms = cnExpr.getTerms();
         for (AbstractVariable v: cnTerms.keySet())
         {
             double c = cnTerms.get(v).doubleValue();
@@ -1033,7 +1031,7 @@ public class SimplexSolver extends Tableau
         while (true)
         {
             double objectiveCoeff = 0;
-            Hashtable<AbstractVariable, Double> terms = zRow.getTerms();
+            Map<AbstractVariable, Double> terms = zRow.getTerms();
             for (AbstractVariable v: terms.keySet()) {
                 double c = ((Double) terms.get(v)).doubleValue();
                 if (v.isPivotable() && c < objectiveCoeff)
@@ -1157,7 +1155,7 @@ public class SimplexSolver extends Tableau
         Set cnset = (Set) _errorVars.get(var);
         if (cnset == null)
         {
-            cnset = new HashSet<AbstractVariable>();
+            cnset = Util.newSet();
             _errorVars.put(cn, cnset);
             cnset.add(var);
         }
